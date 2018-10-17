@@ -36,6 +36,28 @@ End with an example of getting some data out of the system or using it for a lit
 
 Explain how to run the automated tests for this system
 
+### Training on your own data
+This repository assumes that you following a specific images directory structure.
+Images which belong to different classes should be stored in separate directories. The file names
+are not important. All directories should be placed under one root directory like in the schema below:
+
+```bash
+├── images
+    ├── class_1
+    |   ├── image_1.jpg
+    |   ...
+    |   └── image_n.jpg
+    ├── class_2
+    |   ├── image_1.jpg
+    |   ...
+    |   └── image_n.jpg
+    |   ...
+    └── class_n
+        ├── image_1.jpg
+        ...
+        └── image_n.jpg
+```
+
 ### Break down into end to end tests
 
 Explain what these tests test and why

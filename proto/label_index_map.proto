@@ -1,0 +1,11 @@
+syntax = "proto2";
+package pokedex.protos;
+
+message LabelIndexMapItem {
+    optional string name = 1;
+    optional int32 id = 2;
+};
+
+message LabelIndexMap {
+    repeated LabelIndexMapItem item = 1;
+};

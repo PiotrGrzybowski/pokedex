@@ -1,0 +1,8 @@
+syntax = "proto2";
+package pokedex.protos;
+
+message RecordConfig {
+    required string data_path = 1;
+    repeated int32 target_size = 2;
+    required string output_path = 3;
+};
