@@ -1,6 +1,6 @@
 import functools
 import os
-
+import numpy as np
 import tensorflow as tf
 
 
@@ -11,6 +11,8 @@ def build_model_specification(inputs, model_fn, loss_fn, optimizer, reuse=False)
         logits = model_fn(specification['images'])
 
     loss = loss_fn(specification['labels'], logits)
+    l2_loss = tf.losses.get_regularization_loss()
+    loss += l2_loss
 
     if optimizer:
         with tf.variable_scope('optimizer'):
@@ -18,6 +20,8 @@ def build_model_specification(inputs, model_fn, loss_fn, optimizer, reuse=False)
 
     metrics = get_metrics(specification['labels'], logits, loss)
 
+    specification['pred'] = tf.argmax(logits, axis=1)
+    specification['conf'] = tf.confusion_matrix(specification['labels'], tf.argmax(logits, axis=1))
     specification['metrics'] = metrics
     specification['summary_op'] = get_summary_op(metrics)
     specification['metrics_init_op'] = get_metrics_init_op()
@@ -65,8 +69,10 @@ def build_model(inputs):
 
 def build_inputs(features, targets, batch_size):
     dataset = tf.data.Dataset.from_tensor_slices((features, targets))
-    dataset = dataset.shuffle(buffer_size=200)
+    dataset = dataset.shuffle(buffer_size=50000)
     dataset = dataset.batch(batch_size)
+    dataset = dataset.prefetch(1)
+
     iterator = dataset.make_initializable_iterator()
     irises, labels = iterator.get_next()
     iterator_init_op = iterator.initializer
@@ -129,7 +135,21 @@ def train(train_spec, eval_spec, model_dir, epochs, train_steps_per_epoch, eval_
                 eval_writer.add_summary(summ, global_step_val)
 
             eval_accuracy = sess.run(eval_spec['metrics']['accuracy'][0])
-            print(eval_accuracy)
+
+            # if epoch > 0 and epoch % 10 == 0:
+            print("Epoch {}, accuracy = {}".format(epoch, eval_accuracy))
             if eval_accuracy >= best_eval_accuracy:
                 best_eval_accuracy = eval_accuracy
                 best_saver.save(sess, os.path.join(model_dir, 'best_weights', 'after-epoch'), epoch + 1)
+
+        matrix = np.zeros((10, 10), dtype=np.int)
+
+        sess.run(eval_spec['iterator_init_op'])
+        sess.run(eval_spec['metrics_init_op'])
+
+        for _ in range(eval_steps_per_epoch):
+            matrix += sess.run(eval_spec['conf'])
+
+        print(matrix)
+        print(np.sum(matrix))
+        print(np.trace(matrix))
