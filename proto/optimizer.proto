@@ -1,0 +1,28 @@
+syntax = "proto2";
+package pokedex.protos;
+
+message Optimizer {
+  oneof optimizer {
+    RMSPropOptimizer rms_prop_optimizer = 1;
+    MomentumOptimizer momentum_optimizer = 2;
+    AdamOptimizer adam_optimizer = 3;
+  }
+}
+
+message RMSPropOptimizer {
+  required float learning_rate = 1;
+  optional float momentum_optimizer_value = 2 [default = 0.9];
+  optional float decay = 3 [default = 0.9];
+  optional float epsilon = 4 [default = 1.0];
+}
+
+
+message MomentumOptimizer {
+  required float learning_rate = 1;
+  optional float momentum_optimizer_value = 2 [default = 0.9];
+}
+
+
+message AdamOptimizer {
+  required float learning_rate = 1;
+}

@@ -16,7 +16,9 @@ def build_model_specification(inputs, model_fn, loss_fn, optimizer, reuse=False)
 
     if optimizer:
         with tf.variable_scope('optimizer'):
-            specification['train_op'] = get_train_op(optimizer, loss, tf.train.create_global_step())
+            with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
+                train_op = get_train_op(optimizer, loss, tf.train.create_global_step())
+                specification['train_op'] = train_op
 
     metrics = get_metrics(specification['labels'], logits, loss)
 
@@ -38,6 +40,7 @@ def get_summary_op(metrics):
 
 
 def get_train_op(optimizer, loss, global_step):
+
     return optimizer.minimize(loss, global_step)
 
 

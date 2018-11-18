@@ -60,15 +60,29 @@ def parse_cifar_record(record):
     parsed_features = tf.parse_single_example(record, features)
     image = tf.decode_raw(parsed_features["image"], out_type=tf.int8)
     image = tf.image.convert_image_dtype(image, tf.float32)
-
+    # image.set_shape((3072, ))
+    image = tf.manip.reshape(image, [32, 32, 3])
+    print(image)
     label = parsed_features["label"]
 
     return image, label
 
 
-def build_inputs_from_cifar_tf_record_data(path, batch_size, cores):
+def preprocess(image, label):
+    image = tf.image.random_flip_left_right(image)
+    image = tf.image.random_brightness(image, max_delta=32.0 / 255.0)
+    image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
+    image = tf.image.random_hue(image, max_delta=0.5)
+    image = tf.clip_by_value(image, 0.0, 1.0)
+
+
+    return image, label
+
+def build_inputs_from_cifar_tf_record_data(path, batch_size, cores, aug=False):
     dataset = tf.data.TFRecordDataset(path, num_parallel_reads=cores)
-    dataset = dataset.map(parse_cifar_record, num_parallel_calls=cores)
+    dataset = dataset.map(parse_proto_image, num_parallel_calls=cores)
+    if aug:
+        dataset = dataset.map(preprocess, num_parallel_calls=cores)
     dataset = dataset.shuffle(50000)
     dataset = dataset.batch(batch_size=batch_size)
     dataset = dataset.prefetch(1)
@@ -76,7 +90,7 @@ def build_inputs_from_cifar_tf_record_data(path, batch_size, cores):
     iterator = dataset.make_initializable_iterator()
     images, labels = iterator.get_next()
     iterator_init_op = iterator.initializer
-    images.set_shape((batch_size, 3072))
+    # images.set_shape((batch_size, 3072))
     labels.set_shape((batch_size,))
 
     return {'images': images, 'labels': labels, 'iterator_init_op': iterator_init_op}
@@ -87,9 +101,13 @@ def parse_proto_image(record):
                 "label": tf.FixedLenFeature((), tf.int64, default_value=-1)}
 
     parsed_features = tf.parse_single_example(record, features)
-    image = tf.image.decode_jpeg(parsed_features["image"], channels=3)
-    image = tf.image.convert_image_dtype(image, tf.float32)
-    label = parsed_features["label"]
+
+    image = tf.decode_raw(parsed_features['image'], tf.uint8)
+    image.set_shape([3 * 32 * 32])
+    image = tf.cast(tf.transpose(tf.reshape(image, [3, 32, 32]), [1, 2, 0]), tf.float32)
+    image = image / 255.0
+
+    label = tf.cast(parsed_features["label"], tf.int32)
 
     return image, label
 

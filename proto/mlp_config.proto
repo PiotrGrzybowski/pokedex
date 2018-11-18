@@ -1,0 +1,12 @@
+syntax = "proto2";
+package pokedex.protos;
+
+message MlpConfig {
+    required int32 mini_batch = 1;
+    required int32 learning_rate = 2;
+}
+
+message DenseLayer {
+    required int32 units = 1;
+    required
+}

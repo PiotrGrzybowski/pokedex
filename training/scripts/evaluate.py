@@ -11,9 +11,9 @@ def evaluate(eval_spec, model_dir):
 
         # Reload weights from the weights subdirectory
         save_path = model_dir
-        if os.path.isdir(save_path):
-            save_path = tf.train.latest_checkpoint(save_path)
-        saver.restore(sess, save_path)
+        # if os.path.isdir(save_path):
+        #     save_path = tf.train.latest_checkpoint(save_path)
+        # saver.restore(sess, save_path)
 
         sess.run(eval_spec['iterator_init_op'])
         sess.run(eval_spec['metrics_init_op'])
