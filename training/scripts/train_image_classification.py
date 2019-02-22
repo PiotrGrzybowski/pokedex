@@ -11,18 +11,16 @@ from training.image_classification import build_model_specification, build_eval_
 from training.scripts.evaluate import evaluate
 
 
-def kaczmar_model(samples):
+def basic_model(samples):
     out = samples
 
     with tf.variable_scope('conv1'):
         out = tf.layers.conv2d(inputs=out, filters=64, kernel_size=[3, 3], padding='SAME', activation=tf.nn.relu)
         out = tf.layers.max_pooling2d(inputs=out, pool_size=[3, 3], strides=2, padding='SAME')
-        out = tf.layers.dropout(inputs=out, rate=0.25)
 
     with tf.variable_scope('conv2'):
         out = tf.layers.conv2d(inputs=out, filters=64, kernel_size=[3, 3], padding='SAME', activation=tf.nn.relu)
         out = tf.layers.max_pooling2d(inputs=out, pool_size=[3, 3], strides=2, padding='SAME')
-        out = tf.layers.dropout(inputs=out, rate=0.25)
 
     with tf.variable_scope('fc'):
         out = tf.reshape(out, [-1, 8 * 8 * 64])
@@ -92,7 +90,7 @@ if not os.path.exists(model_dir):
 
 loss_fn = tf.losses.sparse_softmax_cross_entropy
 optimizer = tf.train.AdamOptimizer()
-model_fn = kaczmar_model
+model_fn = basic_model
 train_spec = build_model_specification(train_inputs, model_fn, loss_fn, optimizer)
 eval_spec = build_eval_model_specification(test_inputs, model_fn, loss_fn)
 train(train_spec, eval_spec, model_dir, 30, train_steps, test_steps)
