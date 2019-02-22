@@ -75,8 +75,8 @@ def preprocess(image, label):
     image = tf.image.random_hue(image, max_delta=0.5)
     image = tf.clip_by_value(image, 0.0, 1.0)
 
-
     return image, label
+
 
 def build_inputs_from_cifar_tf_record_data(path, batch_size, cores, aug=False):
     dataset = tf.data.TFRecordDataset(path, num_parallel_reads=cores)
@@ -90,7 +90,6 @@ def build_inputs_from_cifar_tf_record_data(path, batch_size, cores, aug=False):
     iterator = dataset.make_initializable_iterator()
     images, labels = iterator.get_next()
     iterator_init_op = iterator.initializer
-    # images.set_shape((batch_size, 3072))
     labels.set_shape((batch_size,))
 
     return {'images': images, 'labels': labels, 'iterator_init_op': iterator_init_op}
