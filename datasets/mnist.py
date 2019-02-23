@@ -1,4 +1,5 @@
 import gzip
+import logging
 import os
 import shutil
 import tempfile
@@ -7,10 +8,13 @@ from six.moves import urllib
 
 
 MNIST_MIRROR = 'http://yann.lecun.com/exdb/mnist/'
-FILES = {'train_images': 'train-images-idx3-ubyte.gz'}
+FILES = {'train_images': 'train-images-idx3-ubyte.gz',
+         'train_labels': 'train-labels-idx1-ubyte.gz',
+         'test_images': 't10k-images-idx3-ubyte.gz',
+         'test_labels': 't10k-labels-idx1-ubyte.gz'}
 
 
-def download(directory, filename):
+def downd(directory, filename):
     """Download (and unzip) a file from the MNIST dataset if not already done."""
     filepath = os.path.join(directory, filename)
     if tf.gfile.Exists(filepath):
@@ -27,6 +31,21 @@ def download(directory, filename):
     os.remove(zipped_filepath)
     return filepath
 
+def download(directory)
 
-def down():
+
+if __name__ == '__main__':
+
+    dest = '/home/piotr/Workspace/Projects/pokedex/datasets'
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+
+    if not tf.gfile.Exists(dest):
+        tf.gfile.MkDir(dest)
+    else:
+        for key, filename in FILES.items():
+            if not tf.gfile.Exists(os.path.join(dest, filename)):
+                url = os.path.join(MNIST_MIRROR, filename)
+                logging.info('Downloading {} to {}'.format(url, os.path.join(dest, filename)))
+                urllib.request.urlretrieve(url, os.path.join(dest, filename))
 

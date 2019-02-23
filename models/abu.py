@@ -51,7 +51,7 @@ if __name__ == '__main__':
     out = tf.nn.softmax(out)
 
     loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=out, labels=labels))
-    optimizer = tf.train.AdamOptimizer(learning_rate=0.0001)
+    optimizer = tf.train.AdamOptimizer()
     gradients = optimizer.compute_gradients(loss=loss, var_list=new_variables)
     train_step = optimizer.apply_gradients(gradients)
 
