@@ -5,22 +5,19 @@ from sklearn.utils import shuffle
 from tensorflow.python import GraphKeys
 
 from datasets.mnist import paget_mlp
-#
-# mnist = tf.keras.datasets.mnist
-#
-# (x_train, y_train), (x_test, y_test) = mnist.load_data()
-# x_train, x_test = x_train / 255.0, x_test / 255.0
-#
-# x_train = np.reshape(x_train, newshape=(60000, 28 * 28)).astype(dtype=np.float32)
-# y_train = to_categorical(y_train, num_classes=10).astype(dtype=np.float32)
-#
-# x_test = np.reshape(x_test, newshape=(10000, 28 * 28)).astype(dtype=np.float32)
-# y_test = to_categorical(y_test, num_classes=10).astype(dtype=np.float32)
-#
-# x_train, y_train = shuffle(x_train, y_train)
 
-destination = '/Users/Piotr/Workspace/DataScience/pokedex/datasets'
-x_train, y_train, init_train, x_test, y_test, init_test = paget_mlp(destination, 32, prefetch=2, cores=4)
+mnist = tf.keras.datasets.mnist
+
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+x_train, x_test = x_train / 255.0, x_test / 255.0
+
+x_train = np.reshape(x_train, newshape=(60000, 28 * 28)).astype(dtype=np.float32)
+y_train = to_categorical(y_train, num_classes=10).astype(dtype=np.float32)
+
+x_test = np.reshape(x_test, newshape=(10000, 28 * 28)).astype(dtype=np.float32)
+y_test = to_categorical(y_test, num_classes=10).astype(dtype=np.float32)
+
+x_train, y_train = shuffle(x_train, y_train)
 
 if __name__ == '__main__':
     w1 = tf.Variable(tf.random_normal(shape=[784, 100], stddev=0.05, dtype=tf.float32),
