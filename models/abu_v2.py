@@ -6,7 +6,7 @@ from tensorflow.python import debug as tf_debug
 from datasets.mnist import paget_mlp, paget_cnn
 
 # destination = '/Users/Piotr/Workspace/DataScience/pokedex/datasets'
-destination = '/home/piotr/Workspac/Projects/pokedex/datasets'
+destination = '/home/piotr/Workspace/Projects/pokedex/datasets'
 x_train, y_train, init_train, x_test, y_test, init_test = paget_cnn(destination, 100, prefetch=2, cores=4)
 
 
@@ -72,16 +72,22 @@ def max_pool(input, pool_size, strides, name):
 def simple_cnn(inputs):
     out = inputs
 
-    out = conv2d(input=out, kernel_shape=[3, 3, 1, 32], strides=[1, 1, 1, 1], name='conv1_1', padding='SAME')
+    out = conv2d(input=out, kernel_shape=[3, 3, 1, 64], strides=[1, 1, 1, 1], name='conv1_1', padding='SAME')
     out = max_pool(input=out, pool_size=[1, 2, 2, 1], strides=[1, 2, 2, 1], name='pool1')
     #
-    out = conv2d(input=out, kernel_shape=[3, 3, 32, 64], strides=[1, 1, 1, 1], name='conv2_1', padding='SAME')
+    out = conv2d(input=out, kernel_shape=[3, 3, 64, 64], strides=[1, 1, 1, 1], name='conv2_1', padding='SAME')
     out = max_pool(input=out, pool_size=[1, 2, 2, 1], strides=[1, 2, 2, 1], name='pool2')
 
-    out = tf.reshape(out, [-1, 7*7*64])
-    out = dense(out, 1024, 'fc1', tf.nn.relu)
-    out = dense(out, 10, 'fc2', tf.nn.relu)
-    # out = dense(out, 10, 'fc3', tf.nn.relu)
+    out = conv2d(input=out, kernel_shape=[7, 7, 64, 384], strides=[1, 1, 1, 1], name='fc1', padding='VALID')
+    out = conv2d(input=out, kernel_shape=[1, 1, 384, 192], strides=[1, 1, 1, 1], name='fc2', padding='VALID')
+    out = conv2d(input=out, kernel_shape=[1, 1, 192, 10], strides=[1, 1, 1, 1], name='fc3', padding='VALID', activation=tf.nn.softmax)
+    out = tf.reshape(out, [-1, 10])
+
+    # out = tf.reshape(out, [-1, 7*7*64])
+    # out = tf.reshape(out, [-1, 192])
+    # out = dense(out, 392, 'fc1', tf.nn.relu)
+    # out = dense(out, 192, 'fc2', tf.nn.relu)
+    # out = dense(out, 10, 'fc3', tf.nn.softmax)
     #
     # out = conv2d(input=out, kernel_shape=[3, 3, 128, 256], strides=[1, 1, 1, 1], name='conv3_1', padding='SAME')
     # out = conv2d(input=out, kernel_shape=[3, 3, 256, 256], strides=[1, 1, 1, 1], name='conv3_2', padding='SAME')
@@ -93,7 +99,6 @@ def simple_cnn(inputs):
     # out = conv2d(input=out, kernel_shape=[1, 1, 1000, 10], strides=[1, 1, 1, 1], name='fc3', padding='VALID', activation=tf.nn.softmax)
     #
     # with tf.variable_scope('flatten'):
-    #     out = tf.reshape(out, [-1, 10])
     return out
 
 
@@ -170,10 +175,9 @@ if __name__ == '__main__':
         for epoch in range(10):
             sess.run([init_train, init_test, init_metrics])
             sess.run([init_train, init_test])
-            print(out)
             for i in range(0, 60000, batch_size):
                 sess.run([train_step, train_metric_updates])
-                # print(sess.run(train_metric_values))
+                print(sess.run(train_metric_values))
             # print(epoch)
             print(sess.run(train_metric_values))
             #
