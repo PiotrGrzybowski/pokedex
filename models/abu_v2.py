@@ -5,7 +5,8 @@ from tensorflow.python import debug as tf_debug
 
 from datasets.mnist import paget_mlp, paget_cnn
 
-destination = '/Users/Piotr/Workspace/DataScience/pokedex/datasets'
+# destination = '/Users/Piotr/Workspace/DataScience/pokedex/datasets'
+destination = '/home/piotr/Workspac/Projects/pokedex/datasets'
 x_train, y_train, init_train, x_test, y_test, init_test = paget_cnn(destination, 100, prefetch=2, cores=4)
 
 
@@ -46,6 +47,14 @@ def conv2d(input, kernel_shape, strides, name, padding, activation=tf.nn.relu):
     return out
 
 
+def dense(input, units, name, activation):
+    with tf.variable_scope(name):
+        weights = create_weights_variable(stddev=0.05, shape=[input.get_shape().as_list()[-1], units], name='weights')
+        bias = create_biases_variable(shape=[units], name='bias')
+        out = activation(tf.add(tf.matmul(input, weights), bias))
+
+    return out
+
 def max_pool(input, pool_size, strides, name):
     with tf.variable_scope(name):
         out = tf.nn.max_pool(value=input, ksize=pool_size, strides=strides, padding='SAME')
@@ -57,31 +66,35 @@ def simple_cnn(inputs):
     out = inputs
 
     out = conv2d(input=out, kernel_shape=[3, 3, 1, 64], strides=[1, 1, 1, 1], name='conv1_1', padding='SAME')
-    out = conv2d(input=out, kernel_shape=[3, 3, 64, 64], strides=[1, 1, 1, 1], name='conv1_2', padding='SAME')
     out = max_pool(input=out, pool_size=[1, 2, 2, 1], strides=[1, 2, 2, 1], name='pool1')
-
-    out = conv2d(input=out, kernel_shape=[3, 3, 64, 128], strides=[1, 1, 1, 1], name='conv2_1', padding='SAME')
-    out = conv2d(input=out, kernel_shape=[3, 3, 128, 128], strides=[1, 1, 1, 1], name='conv2_2', padding='SAME')
+    # out = conv2d(input=out, kernel_shape=[3, 3, 64, 64], strides=[1, 1, 1, 1], name='conv1_2', padding='SAME')
+    #
+    out = conv2d(input=out, kernel_shape=[3, 3, 64, 64], strides=[1, 1, 1, 1], name='conv2_1', padding='SAME')
+    # out = conv2d(input=out, kernel_shape=[3, 3, 128, 128], strides=[1, 1, 1, 1], name='conv2_2', padding='SAME')
     out = max_pool(input=out, pool_size=[1, 2, 2, 1], strides=[1, 2, 2, 1], name='pool2')
 
-    out = conv2d(input=out, kernel_shape=[3, 3, 128, 256], strides=[1, 1, 1, 1], name='conv3_1', padding='SAME')
-    out = conv2d(input=out, kernel_shape=[3, 3, 256, 256], strides=[1, 1, 1, 1], name='conv3_2', padding='SAME')
-    out = conv2d(input=out, kernel_shape=[3, 3, 256, 256], strides=[1, 1, 1, 1], name='conv3_3', padding='SAME')
-    out = max_pool(input=out, pool_size=[1, 2, 2, 1], strides=[1, 2, 2, 1], name='pool3')
-
-    out = conv2d(input=out, kernel_shape=[4, 4, 256, 4096], strides=[1, 1, 1, 1], name='fc1', padding='VALID')
-    out = conv2d(input=out, kernel_shape=[1, 1, 4096, 1000], strides=[1, 1, 1, 1], name='fc2', padding='VALID')
-    out = conv2d(input=out, kernel_shape=[1, 1, 1000, 10], strides=[1, 1, 1, 1], name='fc3', padding='VALID', activation=tf.nn.softmax)
-
-    with tf.variable_scope('flatten'):
-        out = tf.reshape(out, [-1, 10])
+    out = tf.reshape(out, [-1, 7*7*64])
+    out = dense(out, 1000, 'fc1', tf.nn.relu)
+    out = dense(out, 10, 'fc2', tf.nn.relu)
+    #
+    # out = conv2d(input=out, kernel_shape=[3, 3, 128, 256], strides=[1, 1, 1, 1], name='conv3_1', padding='SAME')
+    # out = conv2d(input=out, kernel_shape=[3, 3, 256, 256], strides=[1, 1, 1, 1], name='conv3_2', padding='SAME')
+    # out = conv2d(input=out, kernel_shape=[3, 3, 256, 256], strides=[1, 1, 1, 1], name='conv3_3', padding='SAME')
+    # out = max_pool(input=out, pool_size=[1, 2, 2, 1], strides=[1, 2, 2, 1], name='pool3')
+    #
+    # out = conv2d(input=out, kernel_shape=[4, 4, 256, 4096], strides=[1, 1, 1, 1], name='fc1', padding='VALID')
+    # out = conv2d(input=out, kernel_shape=[1, 1, 4096, 1000], strides=[1, 1, 1, 1], name='fc2', padding='VALID')
+    # out = conv2d(input=out, kernel_shape=[1, 1, 1000, 10], strides=[1, 1, 1, 1], name='fc3', padding='VALID', activation=tf.nn.softmax)
+    #
+    # with tf.variable_scope('flatten'):
+    #     out = tf.reshape(out, [-1, 10])
     return out
 
 
 def create_metrics(labels, logits):
     metrics = {'accuracy': tf.metrics.accuracy(tf.argmax(labels, 1), tf.argmax(logits, 1)),
-               'precision': tf.metrics.precision(tf.argmax(labels, 1), tf.argmax(logits, 1)),
-               'recall': tf.metrics.recall(tf.argmax(labels, 1), tf.argmax(logits, 1)),
+               # 'precision': tf.metrics.precision(tf.argmax(labels, 1), tf.argmax(logits, 1)),
+               # 'recall': tf.metrics.recall(tf.argmax(labels, 1), tf.argmax(logits, 1)),
                'loss': tf.metrics.mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=labels))}
 
     metric_values = {name: metric[0] for name, metric in metrics.items()}
@@ -110,6 +123,7 @@ if __name__ == '__main__':
     with tf.variable_scope(scope, reuse=True):
         out2 = simple_cnn(x_test)
 
+
     cost_function = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=out, labels=labels))
     optimizer = tf.train.AdamOptimizer()
     train_step = optimizer.minimize(cost_function)
@@ -132,8 +146,8 @@ if __name__ == '__main__':
             print(out)
             for i in range(0, 60000, batch_size):
                 sess.run([train_step, train_metric_updates])
-                print(sess.run(train_metric_values))
-            print(epoch)
+                # print(sess.run(train_metric_values))
+            # print(epoch)
             print(sess.run(train_metric_values))
             #
             # for i in range(0, 10000, batch_size):
