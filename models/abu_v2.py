@@ -16,9 +16,15 @@ def create_weights_variable(stddev, shape, name):
                            collections=[GraphKeys.GLOBAL_VARIABLES, GraphKeys.WEIGHTS])
 
 
+def pabu(shape, name):
+    return tf.get_variable(name=name, dtype=tf.float32, shape=shape,
+                           initializer=tf.initializers.glorot_uniform(),
+                           collections=[GraphKeys.GLOBAL_VARIABLES, GraphKeys.WEIGHTS])
+
+
 def create_biases_variable(shape, name):
     return tf.get_variable(name=name, dtype=tf.float32, shape=shape,
-                           initializer=tf.initializers.ones(),
+                           initializer=tf.initializers.zeros(),
                            collections=[GraphKeys.GLOBAL_VARIABLES, GraphKeys.BIASES])
 
 
@@ -38,7 +44,7 @@ def simple_mlp(inputs):
 
 def conv2d(input, kernel_shape, strides, name, padding, activation=tf.nn.relu):
     with tf.variable_scope(name):
-        weights = create_weights_variable(stddev=0.05, shape=kernel_shape, name='weights')
+        weights = create_weights_variable(stddev=0.001, shape=kernel_shape, name='weights')
         bias = create_biases_variable(shape=kernel_shape[-1], name='bias')
         out = tf.nn.conv2d(input=input, filter=weights, strides=strides, padding=padding)
         out = tf.nn.bias_add(value=out, bias=bias)
@@ -49,11 +55,12 @@ def conv2d(input, kernel_shape, strides, name, padding, activation=tf.nn.relu):
 
 def dense(input, units, name, activation):
     with tf.variable_scope(name):
-        weights = create_weights_variable(stddev=0.05, shape=[input.get_shape().as_list()[-1], units], name='weights')
+        weights = pabu(shape=[input.get_shape().as_list()[-1], units], name='weights')
         bias = create_biases_variable(shape=[units], name='bias')
         out = activation(tf.add(tf.matmul(input, weights), bias))
 
     return out
+
 
 def max_pool(input, pool_size, strides, name):
     with tf.variable_scope(name):
@@ -65,17 +72,16 @@ def max_pool(input, pool_size, strides, name):
 def simple_cnn(inputs):
     out = inputs
 
-    out = conv2d(input=out, kernel_shape=[3, 3, 1, 64], strides=[1, 1, 1, 1], name='conv1_1', padding='SAME')
+    out = conv2d(input=out, kernel_shape=[3, 3, 1, 32], strides=[1, 1, 1, 1], name='conv1_1', padding='SAME')
     out = max_pool(input=out, pool_size=[1, 2, 2, 1], strides=[1, 2, 2, 1], name='pool1')
-    # out = conv2d(input=out, kernel_shape=[3, 3, 64, 64], strides=[1, 1, 1, 1], name='conv1_2', padding='SAME')
     #
-    out = conv2d(input=out, kernel_shape=[3, 3, 64, 64], strides=[1, 1, 1, 1], name='conv2_1', padding='SAME')
-    # out = conv2d(input=out, kernel_shape=[3, 3, 128, 128], strides=[1, 1, 1, 1], name='conv2_2', padding='SAME')
+    out = conv2d(input=out, kernel_shape=[3, 3, 32, 64], strides=[1, 1, 1, 1], name='conv2_1', padding='SAME')
     out = max_pool(input=out, pool_size=[1, 2, 2, 1], strides=[1, 2, 2, 1], name='pool2')
 
     out = tf.reshape(out, [-1, 7*7*64])
-    out = dense(out, 1000, 'fc1', tf.nn.relu)
+    out = dense(out, 1024, 'fc1', tf.nn.relu)
     out = dense(out, 10, 'fc2', tf.nn.relu)
+    # out = dense(out, 10, 'fc3', tf.nn.relu)
     #
     # out = conv2d(input=out, kernel_shape=[3, 3, 128, 256], strides=[1, 1, 1, 1], name='conv3_1', padding='SAME')
     # out = conv2d(input=out, kernel_shape=[3, 3, 256, 256], strides=[1, 1, 1, 1], name='conv3_2', padding='SAME')
@@ -88,6 +94,26 @@ def simple_cnn(inputs):
     #
     # with tf.variable_scope('flatten'):
     #     out = tf.reshape(out, [-1, 10])
+    return out
+
+
+def basic_model(samples):
+    out = samples
+
+    with tf.variable_scope('conv1'):
+        out = tf.layers.conv2d(inputs=out, filters=64, kernel_size=[3, 3], padding='SAME', activation=tf.nn.relu)
+        out = tf.layers.max_pooling2d(inputs=out, pool_size=[3, 3], strides=2, padding='SAME')
+
+    with tf.variable_scope('conv2'):
+        out = tf.layers.conv2d(inputs=out, filters=64, kernel_size=[3, 3], padding='SAME', activation=tf.nn.relu)
+        out = tf.layers.max_pooling2d(inputs=out, pool_size=[3, 3], strides=2, padding='SAME')
+
+    with tf.variable_scope('fc'):
+        out = tf.reshape(out, [-1, 7 * 7 * 64])
+        out = tf.layers.dense(inputs=out, units=384, activation=tf.nn.relu)
+        out = tf.layers.dense(inputs=out, units=192, activation=tf.nn.relu)
+        out = tf.layers.dense(inputs=out, units=10, activation=tf.nn.softmax)
+
     return out
 
 
@@ -119,10 +145,10 @@ if __name__ == '__main__':
 
     with tf.variable_scope('model') as scope:
         out = simple_cnn(input_data)
+        # out = basic_model(input_data)
 
-    with tf.variable_scope(scope, reuse=True):
-        out2 = simple_cnn(x_test)
-
+    # with tf.variable_scope(scope, reuse=True):
+    #     out2 = simple_cnn(x_test)
 
     cost_function = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=out, labels=labels))
     optimizer = tf.train.AdamOptimizer()
@@ -138,6 +164,7 @@ if __name__ == '__main__':
 
     # with tf_debug.LocalCLIDebugWrapperSession(tf.Session(), ui_type="curses") as sess:
     with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
         sess.run(init_variables)
 
         for epoch in range(10):
