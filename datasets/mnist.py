@@ -40,7 +40,7 @@ def decode_image_mlp(image):
 def decode_image_cnn(image):
     image = tf.decode_raw(image, tf.uint8)
     image = tf.cast(image, tf.float32)
-    image = tf.reshape(image, [28, 28])
+    image = tf.reshape(image, [28, 28, 1])
     return image / 255.0
 
 
@@ -83,7 +83,7 @@ def get_inputs_cnn(images_file, labels_file, batch_size, prefetch, cores, buffer
 def download_missing_files(directory, files_to_download):
     download_links = [os.path.join(MNIST_MIRROR, filename + '.gz') for filename in files_to_download]
     zipped_paths = [os.path.join(directory, filename + '.gz') for filename in files_to_download]
-    extracted_paths = [os.path.join(destination, filename) for filename in files_to_download]
+    extracted_paths = [os.path.join(directory, filename) for filename in files_to_download]
     download(download_links, zipped_paths)
     extract(zipped_paths, extracted_paths)
     remove(zipped_paths)
@@ -119,10 +119,10 @@ if __name__ == '__main__':
     #     im, la = sess.run([images, labels])
     #     print(im.shape)
 
-    x_train, y_train, init_train, x_test, y_test, init_test = paget_mlp(destination, 32, prefetch=2, cores=4)
+    x_train, y_train, init_train, x_test, y_test, init_test = paget_cnn(destination, 32, prefetch=2, cores=4)
 
     with tf.Session() as sess:
         sess.run([init_train, init_test])
 
         print(sess.run(x_train).shape)
-        print(sess.run(y_train))
+        print(sess.run(y_train).shape)
