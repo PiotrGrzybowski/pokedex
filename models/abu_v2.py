@@ -5,24 +5,24 @@ from tensorflow.python import debug as tf_debug
 
 from datasets.mnist import paget_mlp, paget_cnn
 
-# destination = '/Users/Piotr/Workspace/DataScience/pokedex/datasets'
-destination = '/home/piotr/Workspace/Projects/pokedex/datasets'
+destination = '/Users/Piotr/Workspace/DataScience/pokedex/datasets'
+# destination = '/home/piotr/Workspace/Projects/pokedex/datasets'
 x_train, y_train, init_train, x_test, y_test, init_test = paget_cnn(destination, 100, prefetch=2, cores=4)
 
 
-def create_weights_variable(stddev, shape, name):
+def random_normal_weights(stddev, shape, name):
     return tf.get_variable(name=name, dtype=tf.float32, shape=shape,
                            initializer=tf.initializers.random_normal(stddev=stddev),
                            collections=[GraphKeys.GLOBAL_VARIABLES, GraphKeys.WEIGHTS])
 
 
-def pabu(shape, name):
+def glorot_uniform_weights(shape, name):
     return tf.get_variable(name=name, dtype=tf.float32, shape=shape,
                            initializer=tf.initializers.glorot_uniform(),
                            collections=[GraphKeys.GLOBAL_VARIABLES, GraphKeys.WEIGHTS])
 
 
-def create_biases_variable(shape, name):
+def bias_zero_variable(shape, name):
     return tf.get_variable(name=name, dtype=tf.float32, shape=shape,
                            initializer=tf.initializers.zeros(),
                            collections=[GraphKeys.GLOBAL_VARIABLES, GraphKeys.BIASES])
@@ -30,13 +30,13 @@ def create_biases_variable(shape, name):
 
 def simple_mlp(inputs):
     with tf.variable_scope('fc1'):
-        w1 = create_weights_variable(0.05, [784, 100], 'w1')
-        b1 = create_biases_variable([1, 100], 'b1')
+        w1 = random_normal_weights(0.05, [784, 100], 'w1')
+        b1 = bias_zero_variable([1, 100], 'b1')
         out = tf.nn.relu(tf.add(tf.matmul(inputs, w1), b1))
 
     with tf.variable_scope('fc2'):
-        w2 = create_weights_variable(0.05, [100, 10], 'w2')
-        b2 = create_biases_variable([1, 10], 'b2')
+        w2 = random_normal_weights(0.05, [100, 10], 'w2')
+        b2 = bias_zero_variable([1, 10], 'b2')
         out = tf.nn.softmax(tf.add(tf.matmul(out, w2), b2))
 
     return out
@@ -44,8 +44,8 @@ def simple_mlp(inputs):
 
 def conv2d(input, kernel_shape, strides, name, padding, activation=tf.nn.relu):
     with tf.variable_scope(name):
-        weights = create_weights_variable(stddev=0.001, shape=kernel_shape, name='weights')
-        bias = create_biases_variable(shape=kernel_shape[-1], name='bias')
+        weights = random_normal_weights(stddev=0.001, shape=kernel_shape, name='weights')
+        bias = bias_zero_variable(shape=kernel_shape[-1], name='bias')
         out = tf.nn.conv2d(input=input, filter=weights, strides=strides, padding=padding)
         out = tf.nn.bias_add(value=out, bias=bias)
         out = activation(out)
@@ -55,8 +55,8 @@ def conv2d(input, kernel_shape, strides, name, padding, activation=tf.nn.relu):
 
 def dense(input, units, name, activation):
     with tf.variable_scope(name):
-        weights = pabu(shape=[input.get_shape().as_list()[-1], units], name='weights')
-        bias = create_biases_variable(shape=[units], name='bias')
+        weights = glorot_uniform_weights(shape=[input.get_shape().as_list()[-1], units], name='weights')
+        bias = bias_zero_variable(shape=[units], name='bias')
         out = activation(tf.add(tf.matmul(input, weights), bias))
 
     return out
